@@ -23,6 +23,42 @@ class ID3TreeBuilderTest {
     }
 
     @Test
+    fun buildForestTest() {
+        val dataset = makeDataset()
+        val forest = mutableListOf<Node>()
+        for (i in 0..14) {
+            val sampled = sample(dataset, 5)
+            val allVariables = dataset.first().map { it.left }
+            val blacklistIndexes = getRandomInts(2, allVariables.size)
+            val blacklist = allVariables.filterIndexed { index, variable -> index in blacklistIndexes }
+            forest.add(buildTree(sampled, GOLF, blacklist, 3))
+        }
+        val forestNode = ForestNode(forest)
+        makeValidationDataset().forEach { row ->
+            println("==============")
+            println(row)
+            println("--------------")
+            val classification = forestNode.classify(row)
+            println(classification)
+        }
+    }
+
+    private fun sample(dataset: Collection<Collection<Tuple2<String, String>>>, count: Int): Collection<Collection<Tuple2<String, String>>> {
+        val rows = getRandomInts(count, dataset.size)
+        return dataset.filterIndexed { index, collection ->
+            index in rows
+        }
+    }
+
+    @Test
+    fun buildTreeTest() {
+        val dataset = makeDataset()
+        val root =  buildTree(dataset, GOLF, emptyList(), 3)
+        assertNotNull(root)
+        assertEquals("It should be $OUTLOOK", OUTLOOK, root.variable)
+    }
+
+    @Test
     fun subsetTest() {
         val dataset = makeDataset()
         val subsets = subset(dataset, OUTLOOK)
@@ -52,7 +88,7 @@ class ID3TreeBuilderTest {
             )
         )
         val nodeVariableName = OUTLOOK
-        val node = buildNode(matrix, nodeVariableName)
+        val node = buildTerminalNodes(matrix, nodeVariableName)
         val prediction1 = node.classify(listOf(Tuple2(OUTLOOK, OVERCAST)))
         val prediction2 = node.classify(listOf(Tuple2(OUTLOOK, RAINY)))
         assertEquals("$OVERCAST should result in a prediction of $YES", YES, prediction1)
@@ -62,24 +98,45 @@ class ID3TreeBuilderTest {
     fun makeDataset(): List<List<Tuple2<String, String>>> {
         val header = arrayOf("outlook","temp","humidity","windy", GOLF)
         val vals = arrayOf(
-                arrayOf(RAINY,"hot","high","false",NO),
-                arrayOf(RAINY,"hot","high","true",NO),
-                arrayOf(OVERCAST,"hot","high","false",YES),
-                arrayOf(SUNNY,"mild","high","false",YES),
-                arrayOf(SUNNY,"cool","normal","false",YES),
-                arrayOf(SUNNY,"cool","normal","true",NO),
-                arrayOf(OVERCAST,"cool","normal","true",YES),
-                arrayOf(RAINY,"mild","high","false",NO),
-                arrayOf(RAINY,"cool","normal","false",YES),
-                arrayOf(SUNNY,"mild","normal","false",YES),
-                arrayOf(RAINY,"mild","normal","true",YES),
-                arrayOf(OVERCAST,"mild","high","true",YES),
-                arrayOf(OVERCAST,"hot","normal","false",YES),
-                arrayOf(SUNNY,"mild","high","true",NO))
+            arrayOf(RAINY,"hot","high","false",NO),
+            arrayOf(RAINY,"hot","high","true",NO),
+            arrayOf(OVERCAST,"hot","high","false",YES),
+            arrayOf(SUNNY,"mild","high","false",YES),
+            arrayOf(SUNNY,"cool","normal","false",YES),
+            arrayOf(SUNNY,"cool","normal","true",NO),
+            arrayOf(OVERCAST,"cool","normal","true",YES),
+            arrayOf(RAINY,"mild","high","false",NO),
+            arrayOf(RAINY,"cool","normal","false",YES),
+            arrayOf(SUNNY,"mild","normal","false",YES),
+            arrayOf(RAINY,"mild","normal","true",YES),
+            arrayOf(OVERCAST,"mild","high","true",YES),
+            arrayOf(OVERCAST,"hot","normal","false",YES),
+            arrayOf(SUNNY,"mild","high","true",NO))
         return vals.map { it ->
             (0 until header.size).map { idx ->
                 Tuple2(header[idx], it[idx])
             }
+        }
+    }
+    fun makeValidationDataset(): List<List<Tuple2<String, String>>> {
+        val header = arrayOf("outlook", "temp", "humidity", "windy", GOLF)
+        val vals = arrayOf(
+            arrayOf(OVERCAST, "hot", "high", "false", NO),
+            arrayOf(RAINY, "hot", "high", "true", NO),
+            arrayOf(SUNNY, "hot", "high", "false", NO),
+            arrayOf(RAINY, "cool", "high", "true", NO),
+            arrayOf(SUNNY, "cool", "high", "true", NO),
+            arrayOf(RAINY, "mild", "normal", "false", NO))
+        return vals.map { it ->
+            (0 until header.size).map { idx ->
+                Tuple2(header[idx], it[idx])
+            }
+        }
+    }
+
+    fun getRandomInts(count: Int, max: Int): Collection<Int> {
+        return (1..count).map {
+            (Math.random() * max + 0.5).toInt()
         }
     }
 

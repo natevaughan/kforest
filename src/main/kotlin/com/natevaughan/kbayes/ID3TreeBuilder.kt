@@ -6,22 +6,31 @@ import com.natevaughan.kbayes.LearningUtils.entropy
 /**
  * @author Nate Vaughan
  */
-fun buildTree(dataset: Collection<Collection<Tuple2<String, String>>>, targetVariableName: String): Node {
+fun buildTree(dataset: Collection<Collection<Tuple2<String, String>>>, targetVariableName: String, excludedVariables: List<String>, remainingLayers: Int): Node {
     if (dataset.isEmpty()) {
         throw TrainingException("Cannot train on an empty dataset")
     }
     // assumes rectangular dataset, might want to handle different cases
-    val allVariables = dataset.first().map { it.left }
-    val excludedVariables = emptyList<String>()
     val matrix = getCounts(dataset, targetVariableName, excludedVariables)
     val entropies =  getEntropyTuples(matrix, dataset.size.toLong())
-    val best = entropies.minBy { it.right }
-    val rootNode = buildNode(matrix.get(best!!.left)!!, best.left)
-    val processedVariables = excludedVariables + best.left
-    for (entry in matrix.entries) {
-        println("need to do something with entry $entry")
+    val best = entropies.minBy { it.right }!!
+
+    if (remainingLayers == 0 || entropies.size == 1) {
+        val rootNode = buildTerminalNodes(matrix.get(best.left)!!, best.left)
+        return rootNode
     }
-    return rootNode
+
+    val goldenChildren = matrix.get(best.left)!!.filter { it.value.size == 1 }
+
+    val subsets = subset(dataset, best.left)
+    val newExcludedVariables = excludedVariables + best.left
+    val ungoldenChildren = subsets.filter { !goldenChildren.containsKey(it.key) }
+
+    val children = ungoldenChildren.map { subset ->
+        subset.key to buildTree(subset.value, targetVariableName, newExcludedVariables, remainingLayers - 1)
+    }.toMap()
+
+    return CategoricalNode(best.left, children + goldenChildren.map { it.key to terminalNode(it.key, it.value)})
 }
 
 fun subset(dataset: Collection<Collection<Tuple2<String, String>>>, variableName: String): Map<String, Collection<Collection<Tuple2<String, String>>>> {
@@ -40,11 +49,15 @@ fun subset(dataset: Collection<Collection<Tuple2<String, String>>>, variableName
     return datasets
 }
 
-fun buildNode(counts: Map<String, Collection<Tuple2<String, Long>>> , nodeVariableName: String): Node {
-    val children = counts.map { it.key to TerminalNode(it.value.maxBy { target ->
-        target.right
-    }!!.left) }.toMap()
+fun buildTerminalNodes(counts: Map<String, Collection<Tuple2<String, Long>>>, nodeVariableName: String): Node {
+    val children = counts.map { it.key to terminalNode(it.key, it.value) }.toMap()
     return CategoricalNode(nodeVariableName, children)
+}
+
+private fun terminalNode(name: String, values: Collection<Tuple2<String, Long>>): TerminalNode {
+    return TerminalNode(values.maxBy { target ->
+        target.right
+    }!!.left)
 }
 
 fun getEntropyTuples(matrix: Map<String, Map<String, Collection<Tuple2<String, Long>>>>, datasetSize: Long): Collection<Tuple2<String, Double>> {
