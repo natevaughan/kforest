@@ -1,10 +1,13 @@
 @file:JvmName("ID3TreeBuilder")
 package com.natevaughan.kforest.tree
 
+import com.natevaughan.kforest.CategoricalNode
 import com.natevaughan.kforest.LearningUtils.entropy
-import com.natevaughan.kforest.core.Dataset
-import com.natevaughan.kforest.core.TrainingException
-import com.natevaughan.kforest.core.Tuple2
+import com.natevaughan.kforest.Node
+import com.natevaughan.kforest.TerminalNode
+import com.natevaughan.kforest.Dataset
+import com.natevaughan.kforest.TrainingException
+import com.natevaughan.kforest.Tuple2
 
 /**
  * @author Nate Vaughan
@@ -14,6 +17,9 @@ fun buildTree(dataset: Dataset, targetVariableName: String, excludedVariables: L
         throw TrainingException("Cannot train on an empty dataset")
     }
     val matrix = getCounts(dataset, targetVariableName, excludedVariables)
+    if (matrix.isEmpty()) {
+        throw TrainingException("All variables excluded")
+    }
     val entropies = getEntropyTuples(matrix, dataset.size.toLong())
     val best = entropies.minBy { it.right }!!
 

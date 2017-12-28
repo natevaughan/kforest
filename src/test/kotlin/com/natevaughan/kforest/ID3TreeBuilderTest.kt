@@ -1,8 +1,6 @@
 package com.natevaughan.kforest
 
-import com.natevaughan.kforest.core.Tuple2
-import com.natevaughan.kforest.tree.CategoricalNode
-import com.natevaughan.kforest.tree.ForestNode
+import com.natevaughan.kforest.tree.RandomForestBuilder
 import com.natevaughan.kforest.tree.buildTerminalNodes
 import com.natevaughan.kforest.tree.buildTree
 import com.natevaughan.kforest.tree.getCounts
@@ -34,7 +32,11 @@ class ID3TreeBuilderTest {
     @Test
     fun buildForestTest() {
         val dataset = makeDataset()
-        val forestNode = ForestNode(dataset, GOLF, 3, 0.5, 3, 3)
+        val forestNode = RandomForestBuilder()
+            .dataset(dataset)
+            .target(GOLF)
+            .sampleProportion(0.5)
+            .build()
         for (row in makeValidationDataset()) {
             val prediction = forestNode.classify(row)
             assertTrue(setOf(YES, NO).contains(prediction))

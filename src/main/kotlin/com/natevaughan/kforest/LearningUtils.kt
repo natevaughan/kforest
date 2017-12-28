@@ -27,7 +27,6 @@ object LearningUtils {
      * @param sort whether the list has already been sorted
      * @return Double median value
      */
-    @JvmOverloads
     fun median(doubles: List<Double>, sort: Boolean? = true): Double {
         val size = doubles.size
         if (size < 1) {
