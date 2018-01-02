@@ -7,12 +7,12 @@ interface Node {
     fun classify(values: Collection<Tuple2<String, String>>): String
 }
 
-data class TerminalNode(val value: String): Node {
+data class TerminalNode(val value: String, val counts: Collection<Tuple2<String, Int>>): Node {
     override fun classify(values: Collection<Tuple2<String, String>>): String {
         return value
     }
     override fun toString(): String {
-        return "->$value"
+        return "$value from $counts"
     }
 }
 

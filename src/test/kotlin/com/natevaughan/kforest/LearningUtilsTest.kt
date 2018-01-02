@@ -12,13 +12,13 @@ class LearningUtilsTest {
 
     @Test
     fun itCalculatesSimpleEntropy() {
-        val entropy = entropy(listOf(3L, 3L))
+        val entropy = entropy(listOf(3, 3))
         assertTrue(entropy == 1.0)
     }
 
     @Test
     fun itCalculatesMoreEntropy() {
-        val entropy = entropy(listOf(4L, 1L, 0L))
+        val entropy = entropy(listOf(4, 1, 0))
         assertEquals(entropy, 0.72, 0.01)
     }
 }

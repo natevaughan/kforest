@@ -9,13 +9,14 @@ import com.natevaughan.kforest.Dataset
  * @author Nate Vaughan
  */
 class RandomForestBuilder {
-    var dataset: Dataset? = null
-    var target: String? = null
-    var nodes: Int = 100
-    var sampleProportion: Double = 0.3
-    var depth: Int = 5
-    var variablesPerTree: Int = 5
-    var seed: Long = 0L
+    private var dataset: Dataset? = null
+    private var target: String? = null
+    private var nodes: Int = 100
+    private var sampleProportion: Double = 0.3
+    private var depth: Int = 5
+    private var variablesPerTree: Int = 5
+    private var seed: Long = 0L
+    private var minGain = 0.05
 
     fun dataset(value: Dataset): RandomForestBuilder {
         dataset = value
@@ -45,6 +46,10 @@ class RandomForestBuilder {
         seed = value
         return this
     }
+    fun minGain(value: Double): RandomForestBuilder {
+        minGain = value
+        return this
+    }
     fun build(): EnsembleNode {
         val datasetSnapshot = dataset ?: throw RuntimeException("Cannot build forest with null dataset")
         val targetSnapshot = target ?: throw RuntimeException("Cannot build forest with null target")
@@ -56,7 +61,7 @@ class RandomForestBuilder {
             val sampled = sampleUtils.sample(datasetSnapshot, sampleCount)
             val allVariables = datasetSnapshot.first().map { it.left }.filter { it != targetSnapshot }
             val excludedVariables = allVariables - sampleUtils.sampleCollection(allVariables, variablesPerTree)
-            forest.add(buildTree(sampled, targetSnapshot, excludedVariables, 4))
+            forest.add(buildTree(sampled, targetSnapshot, excludedVariables, 4, minGain))
         }
         return EnsembleNode(forest)
     }

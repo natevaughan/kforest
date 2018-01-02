@@ -46,7 +46,7 @@ object LearningUtils {
      * @param count1 count for target
      * @return double entropy
      */
-    fun entropy(counts: Collection<Long>): Double {
+    fun entropy(counts: Collection<Int>): Double {
         val sum = counts.sumByDouble { it.toDouble() }
         if (sum == 0.0) {
             return 0.0
